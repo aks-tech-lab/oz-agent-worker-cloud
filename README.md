@@ -8,6 +8,52 @@ Self-hosted worker for Oz cloud agents.
 
 `oz-agent-worker` is a daemon that connects to Oz via WebSocket to receive and execute cloud agent tasks on self-hosted infrastructure.
 
+**🚀 Running in GitHub Codespaces?** → See [QUICKSTART-CODESPACE.md](QUICKSTART-CODESPACE.md)
+
+## Quick Start
+
+### Option 1: GitHub Codespace (On-Demand)
+
+Perfect for development or occasional use. Only pay when running.
+
+```bash
+# 1. Configure (one-time)
+cp .env.example .env
+# Edit .env: set WARP_API_KEY, WORKER_ID, CLOUDFLARE_TUNNEL_TOKEN
+
+# 2. Start worker
+./codespace-start.sh
+
+# 3. Use from your local Warp terminal
+# Tasks run in this Codespace via oz-warp.aknibir.systems
+```
+
+📖 **[Full Codespace Guide](QUICKSTART-CODESPACE.md)**
+
+### Option 2: Traditional Server (Always-On)
+
+For production or high-volume use.
+
+```bash
+# 1. Configure environment
+cp .env.example .env
+# Edit .env and set WARP_API_KEY and WORKER_ID
+
+# 2. Login to GHCR (if using the Docker image)
+./ghcr-login.sh  # Interactive setup
+# OR manually:
+# echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
+
+# 3. Run with Docker Compose (easiest)
+docker-compose up -d
+
+# OR run the quick start script
+chmod +x start.sh
+./start.sh
+```
+
+📦 **[Full Deployment Guide](DEPLOYMENT.md)** | 🔑 **[GHCR Configuration](GHCR-CONFIG.md)** | 🚀 **[DEPLOY Branch Workflow](.github/workflows/deploy.yml)**
+
 ## Requirements
 
 - Docker daemon (accessible via socket or TCP)

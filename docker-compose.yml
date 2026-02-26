@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  # Cloudflare Tunnel (optional - for Codespace access)
+  # Only runs if CLOUDFLARE_TUNNEL_TOKEN is set
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    network_mode: host
+    profiles:
+      - with-tunnel
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  oz-agent-worker:
+    image: ghcr.io/aks-tech-lab/oz-warp.aknibir.systems:latest
+    container_name: oz-agent-worker
+    restart: unless-stopped
+    
+    # Mount Docker socket to allow worker to spawn task containers
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:rw
+      # Optional: Add volume mounts for task containers
+      # - ./workspace:/workspace:rw
+    
+    # Environment variables (prefer using .env file)
+    environment:
+      WARP_API_KEY: ${WARP_API_KEY}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    
+    # Pass worker-id and other CLI flags as command args
+    command: >
+      --worker-id ${WORKER_ID}
+      --log-level ${LOG_LEVEL:-info}
+    
+    # Optional: Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # Network mode
+    network_mode: bridge
+    
+    # Health check (optional)
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "oz-agent-worker"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+# Optional: Named volumes for persistence
+volumes:
+  workspace:
+    driver: local
+
+# Networks (if not using host/bridge)
+networks:
+  oz-network:
+    driver: bridge
+
+# Usage:
+# - Basic: docker-compose up -d
+# - With Cloudflare Tunnel: docker-compose --profile with-tunnel up -d
+# - Codespaces: Use ./codespace-start.sh instead (preferred)

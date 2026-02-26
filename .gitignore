@@ -18,6 +18,17 @@ go.work.sum
 # Binary
 oz-agent-worker
 
+# Local env / secrets (never commit real values)
+.env
+.secrets
+
+# Cloudflare Tunnel
+*.pid
+cloudflared.log
+/tmp/cloudflared.log
+/tmp/cloudflared.pid
+.cloudflared/
+
 # Dependency directories
 vendor/
 

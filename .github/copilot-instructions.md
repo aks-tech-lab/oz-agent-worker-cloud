@@ -2,10 +2,13 @@
 
 ## Project overview
 - Self-hosted worker daemon that connects to Warp (Oz) via WebSocket, claims tasks, and launches agent runs inside Docker containers.
+- **Primary deployment**: GitHub Codespaces with on-demand startup via `codespace-start.sh`
+- **Access method**: Cloudflare Tunnel exposes Codespace to local Warp terminal via `oz-warp.aknibir.systems`
 - Core flow: main.go parses CLI -> worker.New() validates Docker + platform -> worker.Start() manages WS reconnect/loops -> handleTaskAssignment -> executeTaskInDocker.
 - Task execution always mounts a sidecar image filesystem into /agent so the runtime is injected into the task container.
 
 ## Architecture and data flow
+- **Codespace workflow**: Local Warp Terminal -> Warp Server -> Cloudflare Tunnel -> GitHub Codespace -> oz-agent-worker -> Docker containers
 - WebSocket wire types live in internal/types/messages.go; only task_assignment is handled today (worker replies with task_claimed or task_failed).
 - Connection lifecycle uses ping/pong heartbeat + exponential reconnect backoff in internal/worker/worker.go.
 - Task start flow (internal/worker/worker.go): resolve task image (assignment.DockerImage or default ubuntu:22.04), pull with registry auth, ensure platform linux/amd64 or linux/arm64.
@@ -22,7 +25,14 @@
 - Logging uses internal/log (zerolog) with global level from --log-level; debug logging prints container logs on success, info on failure.
 - Cleanup: task containers are removed unless --no-cleanup is set; sidecar volumes are intentionally reused.
 
-## Developer workflows
+## Developer workflows - Codespace (primary)
+- **Setup**: `cp .env.example .env` then edit (set WARP_API_KEY, WORKER_ID, CLOUDFLARE_TUNNEL_TOKEN)
+- **Start**: `./codespace-start.sh` (builds if needed, starts tunnel + worker)
+- **Health check**: `./health-check.sh` (validates config, connectivity, processes)
+- **Stop**: Ctrl+C to stop worker, close/stop Codespace to save costs
+- **Tunnel token**: Get from https://one.dash.cloudflare.com/ -> Networks -> Tunnels
+
+## Developer workflows - Traditional
 - Build: go build -o oz-agent-worker (see README).
 - Run: ./oz-agent-worker --api-key "wk-..." --worker-id "my-worker" [-e KEY=VALUE] [-v HOST:CONTAINER].
 - Docker usage requires mounting /var/run/docker.sock into the worker container (README).
@@ -30,9 +40,18 @@
 ## External dependencies
 - Docker daemon must be reachable (client.FromEnv + Ping) or worker startup fails.
 - WebSocket endpoint defaults to wss://oz.warp.dev/api/v1/selfhosted/worker/ws; server root defaults to https://app.warp.dev (hidden CLI overrides).
+- Cloudflare Tunnel (for Codespace): requires CLOUDFLARE_TUNNEL_TOKEN in .env
 
-## Files to start with
+## Files to start with - Codespace focus
+- codespace-start.sh (startup automation with tunnel + worker)
+- QUICKSTART-CODESPACE.md (one-page setup guide)
+- CODESPACE-SETUP.md (detailed architecture and troubleshooting)
+- .env.example (configuration template including CLOUDFLARE_TUNNEL_TOKEN)
+- .devcontainer/devcontainer.json (Codespace environment setup)
+
+## Files to start with - Core logic
 - main.go (CLI and worker wiring)
 - internal/worker/worker.go (WebSocket + Docker task execution)
 - internal/common/task_utils.go (agent CLI args from config)
 - internal/types/messages.go (wire formats)
+

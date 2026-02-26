@@ -1,0 +1,48 @@
+{
+  "name": "oz-agent-worker Codespace",
+  "image": "mcr.microsoft.com/devcontainers/go:1.25",
+  
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "enableNonRootDocker": "true"
+    },
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": "true",
+      "installOhMyZsh": "true"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "go.toolsManagement.checkForUpdates": "local",
+        "go.useLanguageServer": true,
+        "go.gopath": "/go"
+      },
+      "extensions": [
+        "golang.go",
+        "ms-azuretools.vscode-docker",
+        "GitHub.copilot"
+      ]
+    }
+  },
+
+  "forwardPorts": [8080, 2376],
+  "portsAttributes": {
+    "8080": {
+      "label": "Worker API",
+      "onAutoForward": "notify"
+    }
+  },
+
+  "postCreateCommand": "go mod download && chmod +x codespace-start.sh start.sh deploy.sh ghcr-login.sh",
+  
+  "postStartCommand": "bash -c 'echo \"Codespace ready! Run ./codespace-start.sh to start the worker.\"'",
+
+  "remoteUser": "vscode",
+  
+  "mounts": [
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+  ]
+}

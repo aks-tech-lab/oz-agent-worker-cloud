@@ -1,0 +1,42 @@
+[Unit]
+Description=Oz Agent Worker - Self-hosted task executor for Warp cloud agents
+Documentation=https://docs.warp.dev/agent-platform/cloud-agents/self-hosting
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+
+# Load environment variables from .env file
+EnvironmentFile=/opt/oz-agent-worker/.env
+
+# Set working directory
+WorkingDirectory=/opt/oz-agent-worker
+
+# Run the worker binary
+ExecStart=/opt/oz-agent-worker/oz-agent-worker \
+    --api-key ${WARP_API_KEY} \
+    --worker-id ${WORKER_ID} \
+    --log-level ${LOG_LEVEL:-info}
+
+# Restart policy
+Restart=on-failure
+RestartSec=10s
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=oz-agent-worker
+
+[Install]
+WantedBy=multi-user.target

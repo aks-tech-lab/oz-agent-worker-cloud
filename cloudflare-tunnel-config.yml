@@ -1,0 +1,54 @@
+# =============================================================================
+# Cloudflare Tunnel Configuration for GitHub Codespaces
+# =============================================================================
+# This configuration exposes your Codespace to your local machine via
+# the domain: oz-warp.aknibir.systems
+#
+# Two setup methods:
+# 
+# Method 1 (Recommended): Use Cloudflare Dashboard Token
+#   - Go to: https://one.dash.cloudflare.com/ → Networks → Tunnels
+#   - Create tunnel "oz-warp-codespace"
+#   - Copy the token and set in .env: CLOUDFLARE_TUNNEL_TOKEN=eyJ...
+#   - Run: ./codespace-start.sh (tunnel starts automatically)
+#
+# Method 2: Use this config file
+#   - Requires tunnel credentials file from: cloudflared tunnel login
+#   - Replace <tunnel-id> with your actual tunnel ID
+#   - Run: cloudflared tunnel --config cloudflare-tunnel-config.yml run
+# =============================================================================
+
+# Tunnel name (create with: cloudflared tunnel create oz-warp-codespace)
+tunnel: oz-warp-codespace
+
+# Credentials file (create with: cloudflared tunnel login)
+credentials-file: /root/.cloudflared/<tunnel-id>.json
+
+ingress:
+  # Main domain - Access Codespace workspace
+  # Update the service URL to your actual Codespace forwarded port
+  - hostname: oz-warp.aknibir.systems
+    service: http://localhost:8080
+    originRequest:
+      noTLSVerify: true
+      connectTimeout: 30s
+  
+  # Alternative: Forward to the actual GitHub Codespace URL
+  # - hostname: oz-warp.aknibir.systems
+  #   service: https://humble-fiesta-g7wv7g5xww5hwjr5.github.dev
+  #   originRequest:
+  #     noTLSVerify: false
+  
+  # SSH access to Codespace (optional)
+  - hostname: ssh.oz-warp.aknibir.systems
+    service: ssh://localhost:22
+  
+  # Catch-all rule (required)
+  - service: http_status:404
+
+# Logging
+loglevel: info
+
+# Metrics (optional)
+# metrics: localhost:9090
+
